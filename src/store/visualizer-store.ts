@@ -22,7 +22,6 @@ interface VisualizerState {
   autoPlay: boolean;
   errorMessage: string | null;
   hintMessage: string | null;
-  selectedInfoTopic: string;
   presets: VisualizationPreset[];
   recenterNonce: number;
   selectedNodeIds: string[];
@@ -30,7 +29,6 @@ interface VisualizerState {
   updateConfig: (patch: Partial<VisualizationConfig>) => void;
   setStrategyParam: (patch: Partial<VisualizationConfig["strategyParams"]>) => void;
   setLayoutMode: (layoutMode: LayoutMode) => void;
-  setSelectedInfoTopic: (topic: string) => void;
   loadPresets: () => void;
   savePreset: (name: string) => void;
   deletePreset: (presetId: string) => void;
@@ -65,7 +63,6 @@ export const useVisualizerStore = create<VisualizerState>((set, get) => ({
   autoPlay: false,
   errorMessage: null,
   hintMessage: null,
-  selectedInfoTopic: "overview",
   presets: [],
   recenterNonce: 0,
   selectedNodeIds: [],
@@ -100,8 +97,6 @@ export const useVisualizerStore = create<VisualizerState>((set, get) => ({
         hintMessage: null,
       };
     }),
-
-  setSelectedInfoTopic: (topic) => set({ selectedInfoTopic: topic }),
 
   loadPresets: () => {
     const presets = loadPresetsFromStorage();

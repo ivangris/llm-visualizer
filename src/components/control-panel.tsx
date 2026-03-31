@@ -9,18 +9,14 @@ import type { StrategyType } from "@/types/visualizer";
 function InfoButton({
   label,
   title,
-  topic,
 }: {
   label: string;
   title: string;
-  topic: string;
 }) {
-  const setSelectedInfoTopic = useVisualizerStore((state) => state.setSelectedInfoTopic);
   return (
     <button
       type="button"
       title={title}
-      onClick={() => setSelectedInfoTopic(topic)}
       className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-600 text-zinc-300 transition hover:border-cyan-400 hover:text-cyan-300"
       aria-label={label}
     >
@@ -54,6 +50,7 @@ export function ControlPanel() {
   const [openAiModels, setOpenAiModels] = useState<string[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelsLoadError, setModelsLoadError] = useState<string | null>(null);
+  const hasManualOpenAiApiKey = config.openAIApiKey.trim().length > 0;
   const disableConfigWhileRunning = runStatus === "running" && isStepping;
 
   const strategyLabel = useMemo(() => {
@@ -68,6 +65,12 @@ export function ControlPanel() {
 
   useEffect(() => {
     if (config.provider !== "openai") {
+      return;
+    }
+    if (!hasManualOpenAiApiKey) {
+      setOpenAiModels([]);
+      setModelsLoadError(null);
+      setIsLoadingModels(false);
       return;
     }
 
@@ -114,7 +117,7 @@ export function ControlPanel() {
     return () => {
       cancelled = true;
     };
-  }, [config.provider, config.openAIApiKey]);
+  }, [config.provider, config.openAIApiKey, hasManualOpenAiApiKey]);
 
   useEffect(() => {
     if (config.provider !== "openai") {
@@ -137,7 +140,13 @@ export function ControlPanel() {
 
       <div className="mt-4 space-y-3">
         <label className="flex flex-col gap-1 text-xs text-zinc-300">
-          Prompt
+          <span className="inline-flex items-center gap-1">
+            Prompt
+            <InfoButton
+              label="Prompt help"
+              title="Write what you want the model to continue from. Example: Explain how an LLM works."
+            />
+          </span>
           <textarea
             value={config.prompt}
             disabled={runStatus === "running"}
@@ -148,7 +157,13 @@ export function ControlPanel() {
 
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1 text-xs text-zinc-300">
-            Provider
+            <span className="inline-flex items-center gap-1">
+              Provider
+              <InfoButton
+                label="Provider help"
+                title="Choose where next-token predictions come from: deterministic mock, OpenAI API, or future local HF."
+              />
+            </span>
             <select
               value={config.provider}
               disabled={runStatus === "running"}
@@ -165,14 +180,27 @@ export function ControlPanel() {
 
           {config.provider === "openai" ? (
             <label className="flex flex-col gap-1 text-xs text-zinc-300">
-              Model
+              <span className="inline-flex items-center gap-1">
+                Model
+                <InfoButton
+                  label="Model help"
+                  title="This dropdown lists only OpenAI models that passed compatibility checks for chat + logprobs."
+                />
+              </span>
               <select
                 value={config.model}
-                disabled={runStatus === "running" || isLoadingModels || openAiModels.length === 0}
+                disabled={
+                  runStatus === "running" ||
+                  isLoadingModels ||
+                  !hasManualOpenAiApiKey ||
+                  openAiModels.length === 0
+                }
                 onChange={(event) => updateConfig({ model: event.target.value })}
                 className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-2 text-sm"
               >
-                {openAiModels.length === 0 ? (
+                {!hasManualOpenAiApiKey ? (
+                  <option value={config.model}>Enter API key to load models</option>
+                ) : openAiModels.length === 0 ? (
                   <option value={config.model}>No compatible models found</option>
                 ) : null}
                 {openAiModels.map((modelId) => (
@@ -184,7 +212,13 @@ export function ControlPanel() {
             </label>
           ) : (
             <label className="flex flex-col gap-1 text-xs text-zinc-300">
-              Model
+              <span className="inline-flex items-center gap-1">
+                Model
+                <InfoButton
+                  label="Model help"
+                  title="Type the model id used by the selected provider."
+                />
+              </span>
               <input
                 value={config.model}
                 disabled={runStatus === "running"}
@@ -199,7 +233,13 @@ export function ControlPanel() {
         {config.provider === "openai" ? (
           <div className="space-y-1">
             <label className="flex flex-col gap-1 text-xs text-zinc-300">
-              OpenAI API Key (optional if `OPENAI_API_KEY` env is set)
+              <span className="inline-flex items-center gap-1">
+                OpenAI API Key (optional if `OPENAI_API_KEY` env is set)
+                <InfoButton
+                  label="OpenAI API key help"
+                  title="Used to call OpenAI and to load your compatible model list. Left blank if your local env already provides OPENAI_API_KEY."
+                />
+              </span>
               <input
                 type="password"
                 value={config.openAIApiKey}
@@ -210,13 +250,13 @@ export function ControlPanel() {
               />
             </label>
             <p className="text-[11px] text-zinc-500">
-              Model list is loaded from your OpenAI account. Selection is sent directly as the
-              request `model` value.
+              Enter an OpenAI API key to load your compatible model list. Selection is sent
+              directly as the request `model` value.
             </p>
             {isLoadingModels ? (
               <p className="text-[11px] text-zinc-500">Loading models...</p>
             ) : null}
-            {modelsLoadError ? (
+            {modelsLoadError && hasManualOpenAiApiKey ? (
               <p className="text-[11px] text-amber-300">{modelsLoadError}</p>
             ) : null}
           </div>
@@ -228,7 +268,6 @@ export function ControlPanel() {
               Strategy
               <InfoButton
                 label="Strategy help"
-                topic="strategy"
                 title="How the app picks the next word."
               />
             </span>
@@ -249,7 +288,6 @@ export function ControlPanel() {
               Topology
               <InfoButton
                 label="Topology help"
-                topic="topology"
                 title="How the tree is drawn on screen."
               />
             </span>
@@ -266,11 +304,14 @@ export function ControlPanel() {
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          <label
-            className="flex flex-col gap-1 text-xs text-zinc-300"
-            title="How many top token choices to show at each step."
-          >
-            Top-k
+          <label className="flex flex-col gap-1 text-xs text-zinc-300">
+            <span className="inline-flex items-center gap-1">
+              Top-k
+              <InfoButton
+                label="Top-k help"
+                title="Show this many highest-probability choices at each step."
+              />
+            </span>
             <input
               type="number"
               min={1}
@@ -280,11 +321,14 @@ export function ControlPanel() {
               className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-2 text-sm"
             />
           </label>
-          <label
-            className="flex flex-col gap-1 text-xs text-zinc-300"
-            title="Show choices until their total confidence reaches this threshold."
-          >
-            Top-p
+          <label className="flex flex-col gap-1 text-xs text-zinc-300">
+            <span className="inline-flex items-center gap-1">
+              Top-p
+              <InfoButton
+                label="Top-p help"
+                title="Include choices until their combined probability reaches this value."
+              />
+            </span>
             <input
               type="number"
               min={0.1}
@@ -295,11 +339,14 @@ export function ControlPanel() {
               className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-2 text-sm"
             />
           </label>
-          <label
-            className="flex flex-col gap-1 text-xs text-zinc-300"
-            title="Lower is safer and more predictable. Higher is more varied and creative."
-          >
-            Temperature
+          <label className="flex flex-col gap-1 text-xs text-zinc-300">
+            <span className="inline-flex items-center gap-1">
+              Temperature
+              <InfoButton
+                label="Temperature help"
+                title="Lower values make safer, repeated choices. Higher values increase variation."
+              />
+            </span>
             <input
               type="number"
               min={0.1}
@@ -313,11 +360,14 @@ export function ControlPanel() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <label
-            className="flex flex-col gap-1 text-xs text-zinc-300"
-            title="Maximum number of generation steps before stopping."
-          >
-            Max depth
+          <label className="flex flex-col gap-1 text-xs text-zinc-300">
+            <span className="inline-flex items-center gap-1">
+              Max depth
+              <InfoButton
+                label="Max depth help"
+                title="Maximum number of generation steps before the run stops."
+              />
+            </span>
             <input
               type="number"
               min={1}
@@ -328,7 +378,13 @@ export function ControlPanel() {
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-zinc-300">
-            Speed ({config.speed.toFixed(1)}x)
+            <span className="inline-flex items-center gap-1">
+              Speed ({config.speed.toFixed(1)}x)
+              <InfoButton
+                label="Speed help"
+                title="Controls autoplay pace only. It does not change model probabilities."
+              />
+            </span>
             <input
               type="range"
               min={0.25}
@@ -341,27 +397,29 @@ export function ControlPanel() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-xs text-zinc-300">
-          <label
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-2 py-2"
-            title="Shows raw token probability and visible-share probability separately."
-          >
+          <label className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-2 py-2">
             <input
               type="checkbox"
               checked={config.accuracyMode}
               onChange={(event) => updateConfig({ accuracyMode: event.target.checked })}
             />
             Accuracy mode
+            <InfoButton
+              label="Accuracy mode help"
+              title="Shows each token's raw probability and the percentage within visible options."
+            />
           </label>
-          <label
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-2 py-2"
-            title="Keeps the camera centered around active generation updates."
-          >
+          <label className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-2 py-2">
             <input
               type="checkbox"
               checked={config.autoFocus}
               onChange={(event) => updateConfig({ autoFocus: event.target.checked })}
             />
             Auto-focus
+            <InfoButton
+              label="Auto-focus help"
+              title="Keeps the camera centered on the active generation step while autoplay runs."
+            />
           </label>
         </div>
 
@@ -457,14 +515,16 @@ export function ControlPanel() {
             Reset
           </button>
         </div>
-        <button
-          type="button"
-          onClick={requestRecenterToStart}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm transition hover:border-cyan-500 hover:text-cyan-200"
-        >
-          <LocateFixed className="h-4 w-4" />
-          Recenter to Step 0
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={requestRecenterToStart}
+            className="col-span-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm transition hover:border-cyan-500 hover:text-cyan-200"
+          >
+            <LocateFixed className="h-4 w-4" />
+            Recenter to Step 0
+          </button>
+        </div>
       </div>
 
       {hintMessage ? (

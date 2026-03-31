@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 
 import { ControlPanel } from "@/components/control-panel";
 import { FlowCanvas } from "@/components/flow-canvas";
-import { InfoPanel } from "@/components/info-panel";
 import { computeSelectedChainPreview } from "@/lib/selected-chain";
 import { probabilityToPercent } from "@/lib/token-display";
 import { useVisualizerStore } from "@/store/visualizer-store";
@@ -15,7 +14,6 @@ export function VisualizerApp() {
   const config = useVisualizerStore((state) => state.config);
   const autoPlay = useVisualizerStore((state) => state.autoPlay);
   const runStatus = useVisualizerStore((state) => state.runStatus);
-  const selectedInfoTopic = useVisualizerStore((state) => state.selectedInfoTopic);
   const recenterNonce = useVisualizerStore((state) => state.recenterNonce);
   const selectedNodeIds = useVisualizerStore((state) => state.selectedNodeIds);
   const toggleNodeSelection = useVisualizerStore((state) => state.toggleNodeSelection);
@@ -66,7 +64,6 @@ export function VisualizerApp() {
             className="space-y-4"
           >
             <ControlPanel />
-            <InfoPanel topic={selectedInfoTopic} />
           </motion.div>
 
           <motion.main

@@ -4,7 +4,7 @@ export const DEFAULT_CONFIG: VisualizationConfig = {
   prompt: "Explain how an LLM works.",
   provider: "openai",
   model: "gpt-4o-mini",
-  strategy: "top_k",
+  strategy: "temperature",
   strategyParams: {
     topK: 5,
     topP: 0.85,
