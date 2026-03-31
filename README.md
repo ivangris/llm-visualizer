@@ -48,6 +48,9 @@ Optional `.env.local`:
 OPENAI_API_KEY=your_key_here
 ```
 
+You can also paste the OpenAI API key directly in the UI at runtime.  
+That runtime value is not persisted by this app, and you can verify behavior by running locally and inspecting the code.
+
 ## Technical Implementation
 
 The full architecture, module-by-module breakdown, provider contract, and OpenAI logprobs details are in:

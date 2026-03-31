@@ -237,7 +237,7 @@ export function ControlPanel() {
                 OpenAI API Key (optional if `OPENAI_API_KEY` env is set)
                 <InfoButton
                   label="OpenAI API key help"
-                  title="Used to call OpenAI and to load your compatible model list. Left blank if your local env already provides OPENAI_API_KEY."
+                  title="Used to call OpenAI and load your compatible model list. You can enter it at runtime, and it is not persisted by this app."
                 />
               </span>
               <input
@@ -252,6 +252,10 @@ export function ControlPanel() {
             <p className="text-[11px] text-zinc-500">
               Enter an OpenAI API key to load your compatible model list. Selection is sent
               directly as the request `model` value.
+            </p>
+            <p className="text-[11px] text-zinc-500">
+              Runtime-entered keys are kept in-memory for the current session and are not saved.
+              You can verify this by running locally and inspecting the source code.
             </p>
             {isLoadingModels ? (
               <p className="text-[11px] text-zinc-500">Loading models...</p>

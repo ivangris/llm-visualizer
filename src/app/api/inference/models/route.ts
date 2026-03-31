@@ -118,7 +118,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     const apiKey = payload.openAIApiKey || process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Missing OpenAI API key. Add it in the UI or OPENAI_API_KEY." },
+        {
+          error:
+            "Missing OpenAI API key. Add it in the UI at runtime or set OPENAI_API_KEY. Runtime-entered keys are not persisted.",
+        },
         { status: 400 },
       );
     }

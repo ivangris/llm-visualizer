@@ -86,7 +86,9 @@ export async function getOpenAiNextStep(
 ): Promise<NextStepResponse> {
   const apiKey = config.openAIApiKey || process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error("Missing OpenAI API key. Add it in the UI or OPENAI_API_KEY.");
+    throw new Error(
+      "Missing OpenAI API key. Add it in the UI at runtime or set OPENAI_API_KEY. Runtime-entered keys are not persisted.",
+    );
   }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {

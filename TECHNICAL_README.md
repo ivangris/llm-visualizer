@@ -172,6 +172,13 @@ Create `.env.local` (or enter key via UI):
 OPENAI_API_KEY=your_key_here
 ```
 
+Runtime UI key entry is supported and intentionally non-persistent.  
+To confirm, run locally and inspect the key flow in:
+
+- `src/components/control-panel.tsx`
+- `src/lib/server/openai-next-step.ts`
+- `src/app/api/inference/models/route.ts`
+
 ## Scripts
 
 ```bash

@@ -1,35 +1,18 @@
-# Deployment Guide (Vercel)
+# Deployment (Vercel)
 
-This app is designed to run with a server runtime because it uses Next.js API routes:
+Use Vercel for production. This app needs a server runtime for Next.js API routes (`/api/inference/*`).
 
-- `/api/inference/start`
-- `/api/inference/next`
-- `/api/inference/models`
+## Quick Start
 
-These endpoints power the OpenAI integration and should run server-side.
+1. In Vercel, create a new project from `ivangris/llm-visualizer`.
+2. Keep framework preset as `Next.js`.
+3. Add environment variable: `OPENAI_API_KEY`.
+4. Deploy.
 
-## Prerequisites
+You can still enter an OpenAI API key in the UI at runtime for testing.  
+That runtime value is not persisted by the app, and this can be verified by running locally and inspecting code.
 
-- GitHub repo pushed and up to date
-- Vercel account
-- OpenAI API key
-
-## Option 1: Vercel Dashboard (Recommended)
-
-1. Open Vercel and click `Add New...` -> `Project`.
-2. Import `ivangris/llm-visualizer`.
-3. Keep framework preset as `Next.js`.
-4. Add environment variable:
-   - `OPENAI_API_KEY` = your key
-5. Deploy.
-
-Vercel will automatically:
-
-- build with `next build`
-- deploy your App Router pages
-- deploy `/api/inference/*` routes
-
-## Option 2: Vercel CLI
+## CLI Alternative
 
 ```bash
 npm i -g vercel
@@ -39,31 +22,20 @@ vercel env add OPENAI_API_KEY production
 vercel --prod
 ```
 
-## Post-Deploy Verification
+## Verify After Deploy
 
-1. Open your deployed URL.
-2. Set provider to `OpenAI API`.
-3. Click `Start` and confirm tree growth works.
-4. Confirm model dropdown loads compatible models when API key is provided in UI.
-5. Confirm no console/server errors for `/api/inference/*`.
+1. Open the deployed URL.
+2. Choose provider `OpenAI API`.
+3. Run generation and confirm the tree advances.
+4. Confirm `/api/inference/start`, `/api/inference/next`, and `/api/inference/models` return successfully.
 
-## Recommended Project Settings
+## Recommended Settings
 
-- Production branch: `master` (or `main` if you rename later)
-- Enable Preview Deployments for pull requests
-- Keep `OPENAI_API_KEY` configured in:
-  - `Production`
-  - `Preview` (optional but useful)
-  - `Development` (optional if using `vercel dev`)
+- Production branch: `master` (or `main` if renamed)
+- Enable preview deployments for PRs
+- Configure `OPENAI_API_KEY` in Production (and Preview if needed)
 
-## Custom Domain (Optional)
+## Optional: Custom Domain
 
-1. In Vercel project settings, open `Domains`.
-2. Add your domain.
-3. Follow DNS instructions from Vercel.
-4. Re-test generation and API routes on the custom domain.
-
-## Notes
-
-- You can still enter an API key in the UI for testing.
-- For production demos, prefer server-side `OPENAI_API_KEY` so collaborators do not need to paste keys.
+1. Vercel Project -> `Settings` -> `Domains`
+2. Add domain and follow DNS instructions
