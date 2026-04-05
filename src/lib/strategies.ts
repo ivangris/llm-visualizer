@@ -111,21 +111,100 @@ export interface StrategyResult {
 export interface SelectionOptions {
   previousToken?: string;
   avoidImmediateRepeat?: boolean;
+  recentTokens?: string[];
+  avoidTwoTokenLoop?: boolean;
+  recentTokenWindow?: number;
+  avoidRecentTokenReuse?: boolean;
+}
+
+function normalizeTokenForRepeatCheck(token: string): string {
+  return token
+    .replace(/Ä |â–|Ġ|▁/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function applyImmediateRepeatAvoidance(
+  candidates: WorkingCandidate[],
+  options?: SelectionOptions,
+): WorkingCandidate[] {
+  if (!options?.avoidImmediateRepeat || !options.previousToken) {
+    return candidates;
+  }
+  const previous = normalizeTokenForRepeatCheck(options.previousToken);
+  const filtered = candidates.filter(
+    (candidate) => normalizeTokenForRepeatCheck(candidate.token) !== previous,
+  );
+  return filtered.length > 0 ? filtered : candidates;
+}
+
+function applyTwoTokenLoopAvoidance(
+  candidates: WorkingCandidate[],
+  options?: SelectionOptions,
+): WorkingCandidate[] {
+  if (!options?.avoidTwoTokenLoop || !options.recentTokens || options.recentTokens.length < 3) {
+    return candidates;
+  }
+
+  const recent = options.recentTokens.map(normalizeTokenForRepeatCheck);
+  const thirdFromEnd = recent[recent.length - 3];
+  const secondFromEnd = recent[recent.length - 2];
+  const last = recent[recent.length - 1];
+
+  // Detect A-B-A and avoid selecting B again (which would create A-B-A-B).
+  if (!thirdFromEnd || !secondFromEnd || !last || thirdFromEnd !== last || secondFromEnd === last) {
+    return candidates;
+  }
+
+  const filtered = candidates.filter(
+    (candidate) => normalizeTokenForRepeatCheck(candidate.token) !== secondFromEnd,
+  );
+  return filtered.length > 0 ? filtered : candidates;
+}
+
+function applyRecentTokenReuseAvoidance(
+  candidates: WorkingCandidate[],
+  options?: SelectionOptions,
+): WorkingCandidate[] {
+  if (!options?.avoidRecentTokenReuse || !options.recentTokens || options.recentTokens.length === 0) {
+    return candidates;
+  }
+
+  const windowSize = Math.max(1, Math.min(12, options.recentTokenWindow ?? 4));
+  const recentSet = new Set(
+    options.recentTokens
+      .slice(-windowSize)
+      .map(normalizeTokenForRepeatCheck)
+      .filter((token) => token.length > 0),
+  );
+
+  if (recentSet.size === 0) {
+    return candidates;
+  }
+
+  const filtered = candidates.filter(
+    (candidate) => !recentSet.has(normalizeTokenForRepeatCheck(candidate.token)),
+  );
+  return filtered.length > 0 ? filtered : candidates;
 }
 
 function chooseWinningToken(
-  candidates: TokenCandidate[],
+  candidates: WorkingCandidate[],
+  params: StrategyParams,
+  seedInput: string,
   options?: SelectionOptions,
 ): string {
   if (candidates.length === 0) {
     return "";
   }
-  if (!options?.avoidImmediateRepeat || !options.previousToken) {
-    return candidates[0].token;
-  }
 
-  const nonRepeating = candidates.find((candidate) => candidate.token !== options.previousToken);
-  return nonRepeating?.token ?? candidates[0].token;
+  const shortlist = applyImmediateRepeatAvoidance(candidates, options);
+  const withoutTwoTokenLoop = applyTwoTokenLoopAvoidance(shortlist, options);
+  const withoutRecentReuse = applyRecentTokenReuseAvoidance(withoutTwoTokenLoop, options);
+  const random = seededRandom(seedInput);
+  const temperature = clampTemperature(params.temperature);
+  return weightedSample(withoutRecentReuse, temperature, random).token;
 }
 
 export function applySelectionStrategy(
@@ -149,7 +228,7 @@ export function applySelectionStrategy(
     const candidates = withVisibleProbabilities(shortlist);
     return {
       candidates,
-      selectedToken: chooseWinningToken(candidates, options),
+      selectedToken: chooseWinningToken(shortlist, params, seedInput, options),
     };
   }
 
@@ -158,18 +237,16 @@ export function applySelectionStrategy(
     const candidates = withVisibleProbabilities(shortlist);
     return {
       candidates,
-      selectedToken: chooseWinningToken(candidates, options),
+      selectedToken: chooseWinningToken(shortlist, params, seedInput, options),
     };
   }
 
   const shortlist = rankedGlobal.slice(0, clampTopK(params.topK));
-  const temperature = clampTemperature(params.temperature);
-  const random = seededRandom(seedInput);
-  const chosen = weightedSample(shortlist, temperature, random);
+  const selectedToken = chooseWinningToken(shortlist, params, seedInput, options);
   const candidates = withVisibleProbabilities(shortlist);
 
   return {
     candidates,
-    selectedToken: chosen.token,
+    selectedToken,
   };
 }

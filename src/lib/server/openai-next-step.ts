@@ -129,7 +129,11 @@ export async function getOpenAiNextStep(
     {
       previousToken:
         prefixTokens.length > 0 ? prefixTokens[prefixTokens.length - 1] : undefined,
-      avoidImmediateRepeat: config.strategy === "top_k" || config.strategy === "top_p",
+      avoidImmediateRepeat: true,
+      recentTokens: prefixTokens,
+      avoidTwoTokenLoop: true,
+      avoidRecentTokenReuse: true,
+      recentTokenWindow: 4,
     },
   );
 

@@ -80,7 +80,7 @@ export function VisualizerApp() {
                 accuracyMode={config.accuracyMode}
                 autoFocus={config.autoFocus}
                 activeNodeId={tree.activeNodeId}
-                followActiveStep={autoPlay && runStatus === "running"}
+                followActiveStep={config.autoFocus && runStatus === "running"}
                 recenterNonce={recenterNonce}
                 selectedNodeIds={selectedNodeIds}
                 onToggleNodeSelection={toggleNodeSelection}

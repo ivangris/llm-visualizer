@@ -1,5 +1,4 @@
 import type { TreeNode } from "@/types/visualizer";
-import { tokenToWordHelper } from "@/lib/token-display";
 
 export interface ChainPreviewResult {
   state: "empty" | "valid" | "hypothetical";
@@ -19,10 +18,10 @@ function product(values: number[]): number {
 
 function previewTextFromNodes(nodes: TreeNode[]): string {
   return nodes
-    .map((node) => tokenToWordHelper(node.token))
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
+    .map((node) => node.token)
+    .join("")
+    .replace(/Ä |â–|Ġ|▁/gu, " ")
+    .trimStart();
 }
 
 export function computeSelectedChainPreview(
@@ -76,7 +75,9 @@ export function computeSelectedChainPreview(
   const hasBranchSplitSelection = selectedNodes.some((node) => !pathIdSet.has(node.id));
   const isHypothetical = hasDuplicateStepSelection || hasBranchSplitSelection;
 
-  const selectedTokensText = previewTextFromNodes(selectedNodes);
+  const selectedTokensText = isHypothetical
+    ? previewTextFromNodes(selectedNodes)
+    : (deepest.assembledText ?? previewTextFromNodes(pathToDeepest));
   const selectedChainProbability = product(
     selectedNodes.map((node) => node.rawProbability ?? node.probability),
   );
